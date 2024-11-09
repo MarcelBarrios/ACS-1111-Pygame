@@ -6,7 +6,6 @@
 
 import pygame
 import time
-import math
 from random import randint, choice
 pygame.init()
 
