@@ -6,6 +6,7 @@
 
 import pygame
 import time
+import math
 from random import randint, choice
 pygame.init()
 
@@ -35,6 +36,8 @@ class GameObject(pygame.sprite.Sprite):
         ):
         super(GameObject, self).__init__()
         self.surf = pygame.image.load(image)
+        self.surf = self.surf.convert_alpha()  
+        self.mask = pygame.mask.from_surface(self.surf)
         self.x = x
         self.y = y
         self.rect = self.surf.get_rect()  # add
@@ -261,7 +264,7 @@ while running:
 
 # Check collision player and bomb
 
-    if pygame.sprite.collide_rect(player, bomb):
+    if pygame.sprite.collide_rect(player, bomb) and player.rect.collidepoint(bomb.x, bomb.y):
         player.hit()
         running = False
 
