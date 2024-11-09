@@ -2,6 +2,7 @@
 
 # Import and initialize pygame
 import pygame
+import time 
 from random import randint, choice
 pygame.init()
 
@@ -75,7 +76,9 @@ class Player(GameObject):
     self.lane_index_x = 1          
     self.lane_index_y = 1
     self.reset()
-
+    self.hit_cooldown = False
+    self.last_hit_time = 0
+    
   def left(self):
     if self.lane_index_x > 0:
       self.lane_index_x -= 1
@@ -106,6 +109,58 @@ class Player(GameObject):
     self.x = 250 - 32
     self.y = 250 - 32
 
+  def hit(self):
+    if not self.hit_cooldown:
+        print("Player hit by bomb, or there was a normal collision!")
+        self.hit_cooldown = True
+        self.last_hit_time = time.time()
+
+class Bomb(GameObject):
+    def __init__(self):
+        super(Bomb, self).__init__(0, 0, 'bomb.png')
+        self.surf = pygame.transform.scale(self.surf, (64, 64))
+        self.reset()
+
+    def move(self):
+        # Move in a specific direction
+        if self.direction == 'down':
+            self.y += self.speed
+        elif self.direction == 'up':
+            self.y -= self.speed
+        elif self.direction == 'left':
+            self.x -= self.speed
+        elif self.direction == 'right':
+            self.x += self.speed
+
+        # Reset bomb if it goes off screen
+        if (self.x < -64 or self.x > 500 or 
+            self.y < -64 or self.y > 500):
+            self.reset()
+
+    def reset(self):
+        # Randomly choose an edge to start from
+        edge = choice(['top', 'bottom', 'left', 'right'])
+        
+        if edge == 'top':
+            self.x = choice([93, 218, 343])
+            self.y = -64  # Start above the screen
+            self.direction = 'down'
+        elif edge == 'bottom':
+            self.x = choice([93, 218, 343])
+            self.y = 500  # Start below the screen
+            self.direction = 'up'
+        elif edge == 'left':
+            self.x = -64  # Start left of the screen
+            self.y = choice([93, 218, 343])
+            self.direction = 'right'
+        elif edge == 'right':
+            self.x = 500  # Start right of the screen
+            self.y = choice([93, 218, 343])
+            self.direction = 'left'
+
+        # Set a lower speed for movement
+        self.speed = (randint(0, 50) / 100) + 0.5  # Adjusted speed range
+
 # Make an instance of GameObject
 # apple = GameObject(0, 250, 'apple.png')
 
@@ -114,10 +169,13 @@ strawberry = Strawberry()
 # make an instance of Player
 player = Player()
 
+bomb = Bomb()
+
 # Add sprites to group
 all_sprites.add(player)
 all_sprites.add(apple)
 all_sprites.add(strawberry)
+all_sprites.add(bomb)
 
 # make a fruits Group
 fruit_sprites = pygame.sprite.Group()
@@ -155,6 +213,14 @@ while running:
   fruit = pygame.sprite.spritecollideany(player, fruit_sprites)
   if fruit:
     fruit.reset()
+
+# Check collision player and bomb
+  if pygame.sprite.collide_rect(player, bomb):
+    player.hit()
+    running = False
+
+  if player.hit_cooldown and time.time() - player.last_hit_time > 2:
+    player.hit_cooldown = False
 
   # Update the window
   pygame.display.flip()
